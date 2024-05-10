@@ -39,8 +39,7 @@ user.post("/login", async (req, res, next) => {
         }
     }
     return res.status(500).json({code: 500, message: "Campos incompletos"});
-
-
+    
 });
 
 // Get a users
