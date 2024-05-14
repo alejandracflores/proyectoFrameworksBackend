@@ -3,6 +3,9 @@ const morgan = require('morgan');
 const express = require('express');
 const app = express();
 
+// Variables de entorno dentro del proyecto
+require('dotenv').config();
+
 //Routers
 const user = require('./routes/user');
 
@@ -10,7 +13,7 @@ const user = require('./routes/user');
 const auth = require('./middleware/auth');
 const notFound = require('./middleware/notFound');
 const index = require('./middleware/index');
-const cors = require('./middleware/cors')
+const cors = require('./middleware/cors');
 
 // Morgan
 app.use(morgan('dev'));
