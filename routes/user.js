@@ -2,6 +2,11 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const user = express.Router();
 const db = require('../config/database');
+const { uploadFile } = require('../utils/uploadFile');
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
 
 // Register a user
 user.post("/signin", async (req, res, next) => {
@@ -13,12 +18,23 @@ user.post("/signin", async (req, res, next) => {
         const rows = await db.query(query);
     
         if(rows.affectedRows == 1) {
+            console.log(rows);
+            // If para identificar status
+            if (status == "Comprador") {
+                let query = `INSERT INTO buyer (user_name) VALUES ('${user_name}');`;
+                const rows = await db.query(query);
+            }
+            else {
+                let query = `INSERT INTO artist (user_name) VALUES ('${user_name}');`;
+                const rows = await db.query(query);
+            }
             return res.status(201).json({ code: 201, message: "Usuario registrado correctamente" });
         }
         return res.status(500).json({code: 500, message: "Ocurrió un error"});
     }
     return res.status(500).json({code: 500, message: "Campos incompletos"});
 });
+
 
 // Login a user
 user.post("/login", async (req, res, next) => {
@@ -31,23 +47,143 @@ user.post("/login", async (req, res, next) => {
         if(rows.length == 1) {
             const token = jwt.sign({
                 user_name: rows[0].user_name,
+                status: rows[0].status,
+
             }, "debugkey");
-            return res.status(200).json({code: 200, message: token });
+            return res.status(200).json({code: 200, message: token, user_name: rows[0].user_name, status: rows[0].status});
         }
         else {
             return res.status(200).json({code: 401, message: "Usuario y/o contraseña incorrectos"});
         }
     }
     return res.status(500).json({code: 500, message: "Campos incompletos"});
-    
 });
+
+// user.post ("/prueba-imagen", upload.single('perfil'), async (req, res, next) => {
+//     // Imprimir datos del archivo
+//     console.log(req.file);
+//     // Imprime los datos del body (prueba)
+//     console.log(req.body.prueba);
+//     // Guarda el nombre de la imagen que se subió al bucket
+//     const result = await uploadFile(req.file);
+//     // Imprime el nombre de la imagen
+//     console.log(result);
+//     // Retorna el nombre de la imagen
+//     return res.status(200).json({code: 200, message: "Imagen subida correctamente", filename: result});
+// });
+
+
+// Editar o añadir la foto de perfil del comprador
+user.post("/perfil-buyer", upload.single('perfil'), async (req, res, next) => {
+    // Verificar si el token no existe
+    const token = req.headers['token'];
+    if (!token) {
+        return res.status(401).json({code: 401, message: "Token no proporcionado"});
+    }
+
+    // Verificar si el token es válido
+    let decoded;
+    try {
+        decoded = jwt.verify(token, "debugkey");
+    } catch (error) {
+        return res.status(401).json({code: 401, message: "Token inválido"});
+    }
+    // Variable de los campos
+    const user_name = decoded.user_name;
+
+    // Imprimir datos del archivo
+    console.log(req.file);
+    // Imprime los datos del body (prueba)
+    console.log(req.body.prueba);
+    // Guarda el nombre de la imagen que se subió al bucket
+    const result = await uploadFile(req.file);
+    // Imprime el nombre de la imagen
+    console.log(result);
+
+    // Verificar si los campos necesarios existen
+    if (result != 'error') {
+        let query = `UPDATE buyer SET photo = '${result}' WHERE user_name = '${user_name}';`;
+        try {
+            const rows = await db.query(query);
+
+            if(rows.affectedRows == 1) {
+                return res.status(200).json({ code: 200, message: "Foto de perfil actualizada correctamente" });
+            }
+            return res.status(500).json({code: 500, message: "Ocurrió un error al actualizar la foto de perfil"});
+        } catch (error) {
+            return res.status(500).json({code: 500, message: "Ocurrió un error", error: error.message});
+        }
+    }
+    return res.status(400).json({code: 400, message: "Campos incompletos"});
+});
+
+
+// Editar perfil del vendedor
+user.post("/perfil-artist", upload.single('perfil'), async (req, res, next) => {
+    // Verificar si el token no existe
+    const token = req.headers['token'];
+    if (!token) {
+        return res.status(401).json({code: 401, message: "Token no proporcionado"});
+    }
+
+    // Verificar si el token es válido
+    let decoded;
+    try {
+        decoded = jwt.verify(token, "debugkey");
+    } catch (error) {
+        return res.status(401).json({code: 401, message: "Token inválido"});
+    }
+
+    // Obtener el id del artista
+    const user_name = decoded.user_name;
+
+    // Imprimir datos del archivo
+    console.log(req.file);
+    let result = 'error';
+    if (req.file) {
+        // Guarda el nombre de la imagen que se subió al bucket
+        result = await uploadFile(req.file);
+        // Imprime el nombre de la imagen
+        console.log(result);
+    }
+
+    // Extraer los campos de la solicitud
+    const { social_media_instagram, social_media_x, social_media_tiktok, correo } = req.body;
+
+    // Verificar si al menos un campo está presente
+    if ((result != 'error') || social_media_instagram || social_media_x || social_media_tiktok || correo) {
+        let updates = [];
+        if (result != 'error') updates.push(`photo = '${result}'`);
+        if (social_media_instagram) updates.push(`social_media_instagram = '${social_media_instagram}'`);
+        if (social_media_x) updates.push(`social_media_x = '${social_media_x}'`);
+        if (social_media_tiktok) updates.push(`social_media_tiktok = '${social_media_tiktok}'`);
+        if (correo) updates.push(`correo = '${correo}'`);
+
+        // Constructor Update Dinámico
+        let query = `UPDATE artist SET ${updates.join(', ')} WHERE user_name = '${user_name}';`;
+        try {
+            const rows = await db.query(query);
+
+            if (rows.affectedRows == 1) {
+                return res.status(200).json({ code: 200, message: "Datos de perfil actualizados correctamente" });
+            }
+            return res.status(500).json({code: 500, message: "Ocurrió un error al actualizar los datos de perfil"});
+        } catch (error) {
+            return res.status(500).json({code: 500, message: "Ocurrió un error", error: error.message});
+        }
+    } else {
+        return res.status(400).json({code: 400, message: "No se proporcionó ningún campo para actualizar"});
+    }
+});
+
+
 
 // Get a users
-user.get("/", async (req, res, next) => {
-    const query = "SELECT * FROM user";
-    const rows = await db.query(query);
+// user.get("/", async (req, res, next) => {
+//     const query = "SELECT * FROM user";
+//     const rows = await db.query(query);
 
-    return res.status(200).json({code: 200, message: rows});
-});
+//     return res.status(200).json({code: 200, message: rows});
+// });
 
 module.exports = user;
