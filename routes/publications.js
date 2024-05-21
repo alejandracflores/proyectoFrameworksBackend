@@ -214,6 +214,43 @@ publications.delete("/delete-publication/:id", async (req, res, next) => {
     }
 });
 
+// Obtener publicaciones
+publications.get("/publications", async (req, res, next) => {
+    const query = "SELECT * FROM works";
+    try {
+        const rows = await db.query(query);
+        return res.status(200).json({ code: 200, message: rows });
+    } catch (error) {
+        return res.status(500).json({ code: 500, message: "Ocurrió un error", error: error.message });
+    }
+});
+
+// Buscar publicaciones por etiquetas
+publications.get("/search/:labels", async (req, res, next) => {
+    // Verificar si el token no existe
+    const token = req.headers['token'];
+    if (!token) {
+        return res.status(401).json({code: 401, message: "Token no proporcionado"});
+    }
+
+    // Verificar si el token es válido
+    try {
+        jwt.verify(token, "debugkey");
+    } catch (error) {
+        return res.status(401).json({code: 401, message: "Token inválido"});
+    }
+
+    const labels = req.params.labels.split(',');
+    const query = `SELECT * FROM works WHERE labels REGEXP '${labels.join('|')}'`;
+
+    try {
+        const rows = await db.query(query);
+        return res.status(200).json({ code: 200, message: rows });
+    } catch (error) {
+        return res.status(500).json({ code: 500, message: "Ocurrió un error", error: error.message });
+    }
+});
+
 
 module.exports = publications;
 
