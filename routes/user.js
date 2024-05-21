@@ -88,7 +88,7 @@ user.post("/perfil-buyer", upload.single('perfil'), async (req, res, next) => {
     } catch (error) {
         return res.status(401).json({code: 401, message: "Token inválido"});
     }
-    // Variable de los campos
+    // Obetener el user del comprador
     const user_name = decoded.user_name;
 
     // Imprimir datos del archivo
@@ -134,7 +134,7 @@ user.post("/perfil-artist", upload.single('perfil'), async (req, res, next) => {
         return res.status(401).json({code: 401, message: "Token inválido"});
     }
 
-    // Obtener el id del artista
+    // Obtener el user del artista
     const user_name = decoded.user_name;
 
     // Imprimir datos del archivo
@@ -174,6 +174,41 @@ user.post("/perfil-artist", upload.single('perfil'), async (req, res, next) => {
     } else {
         return res.status(400).json({code: 400, message: "No se proporcionó ningún campo para actualizar"});
     }
+});
+
+// Mostrar información del usuario
+user.get("/perfil", async (req, res, next) => {
+    // Verificar si el token no existe
+    const token = req.headers['token'];
+    if (!token) {
+        return res.status(401).json({code: 401, message: "Token no proporcionado"});
+    }
+
+    // Verificar si el token es válido
+    let decoded;
+    try {
+        decoded = jwt.verify(token, "debugkey");
+    } catch (error) {
+        return res.status(401).json({code: 401, message: "Token inválido"});
+    }
+
+    // Obtener el user del comprador
+    const user_name = decoded.user_name;
+
+    // Verificar si el usuario es un comprador o un vendedor
+    let query = `SELECT * FROM buyer WHERE user_name = '${user_name}';`;
+    let rows = await db.query(query);
+    if (rows.length === 1) {
+        return res.status(200).json({ code: 200, message: rows[0] });
+    }
+
+    query = `SELECT * FROM artist WHERE user_name = '${user_name}';`;
+    rows = await db.query(query);
+    if (rows.length === 1) {
+        return res.status(200).json({ code: 200, message: rows[0] });
+    }
+
+    return res.status(404).json({ code: 404, message: "Usuario no encontrado" });
 });
 
 
