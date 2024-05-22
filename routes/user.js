@@ -96,7 +96,13 @@ user.post("/perfil-buyer", upload.single('perfil'), async (req, res, next) => {
     // Imprime los datos del body (prueba)
     console.log(req.body.prueba);
     // Guarda el nombre de la imagen que se subió al bucket
-    const result = await uploadFile(req.file);
+    
+
+    try {
+
+        const result = await uploadFile(req.file);
+        
+    
     // Imprime el nombre de la imagen
     console.log(result);
 
@@ -114,7 +120,12 @@ user.post("/perfil-buyer", upload.single('perfil'), async (req, res, next) => {
             return res.status(500).json({code: 500, message: "Ocurrió un error", error: error.message});
         }
     }
-    return res.status(400).json({code: 400, message: "Campos incompletos"});
+        
+    } catch (error) {
+        return res.status(400).json({code: 400, message: "Campos incompletos"});
+    }
+    
+    
 });
 
 
