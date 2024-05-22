@@ -252,6 +252,52 @@ publications.get("/publications-home", async (req, res, next) => {
     }
 });
 
+// Mostrar publicaciones de un artista
+publications.get("/publications-artist/:artist_id", async (req, res, next) => {
+    const token = req.headers['token'];
+    // Verificar si el token no existe
+    if (!token) {
+        return res.status(401).json({code: 401, message: "Token no proporcionado"});
+    }
+
+    // Verificar si el token es válido
+    let decoded;
+    try {
+        decoded = jwt.verify(token, "debugkey");
+    } catch (error) {
+        return res.status(401).json({code: 401, message: "Token inválido"});
+    }
+
+    // Verificar si el usuario es un artista
+    if (decoded.status !== 'Vendedor') {
+        return res.status(403).json({code: 403, message: "No tienes permisos para ver tus publicaciones"});
+    }
+
+    const artist_id = req.params.artist_id;
+
+    const query = `SELECT * FROM works WHERE artist_id = '${artist_id}'`;
+    try {
+        const rows = await db.query(query);
+
+        // URL base para las imágenes
+        const baseImageUrl = "https://bucketdealesitacomunarte.s3.amazonaws.com/";
+
+        // Procesar las filas para incluir la URL completa de la imagen principal
+        const processedRows = rows.map(row => {
+            const imageUrls = row.images.split(",");
+            const mainImageUrl = `${baseImageUrl}${imageUrls[0]}`;
+            return {
+                ...row,
+                mainImageUrl
+            };
+        });
+
+        return res.status(200).json({ code: 200, message: processedRows });
+    } catch (error) {
+        return res.status(500).json({ code: 500, message: "Ocurrió un error", error: error.message });
+    }
+});
+
 
 // Buscar publicaciones por etiquetas
 publications.get("/search/:labels", async (req, res, next) => {
