@@ -214,16 +214,44 @@ publications.delete("/delete-publication/:id", async (req, res, next) => {
     }
 });
 
-// Obtener publicaciones
-publications.get("/publications", async (req, res, next) => {
-    const query = "SELECT * FROM works";
+// Mostrar publicaciones en la página principal
+publications.get("/publications-home", async (req, res, next) => {
+    // Verificar si el token no existe
+    const token = req.headers['token'];
+    if (!token) {
+        return res.status(401).json({ code: 401, message: "Token no proporcionado" });
+    }
+
+    // Verificar si el token es válido
+    try {
+        jwt.verify(token, "debugkey");
+    } catch (error) {
+        return res.status(401).json({ code: 401, message: "Token inválido" });
+    }
+
+    const query = "SELECT * FROM works ORDER BY RAND()";
     try {
         const rows = await db.query(query);
-        return res.status(200).json({ code: 200, message: rows });
+        
+         // URL base para las imágenes
+        const baseImageUrl = "https://bucketdealesitacomunarte.s3.amazonaws.com/";
+
+        // Procesar las filas para incluir la URL completa de la imagen principal
+        const processedRows = rows.map(row => {
+            const imageUrls = row.images.split(",");
+            const mainImageUrl = `${baseImageUrl}${imageUrls[0]}`;
+            return {
+                ...row,
+                mainImageUrl
+            };
+        });
+
+        return res.status(200).json({ code: 200, message: processedRows });
     } catch (error) {
         return res.status(500).json({ code: 500, message: "Ocurrió un error", error: error.message });
     }
 });
+
 
 // Buscar publicaciones por etiquetas
 publications.get("/search/:labels", async (req, res, next) => {
@@ -245,6 +273,20 @@ publications.get("/search/:labels", async (req, res, next) => {
 
     try {
         const rows = await db.query(query);
+
+        // URL base para las imágenes
+        const baseImageUrl = "https://bucketdealesitacomunarte.s3.amazonaws.com/";
+
+        // Procesar las filas para incluir la URL completa de la imagen principal
+        const processedRows = rows.map(row => {
+            const imageUrls = row.images.split(",");
+            const mainImageUrl = `${baseImageUrl}${imageUrls[0]}`;
+            return {
+                ...row,
+                mainImageUrl
+            };
+        });
+
         return res.status(200).json({ code: 200, message: rows });
     } catch (error) {
         return res.status(500).json({ code: 500, message: "Ocurrió un error", error: error.message });
