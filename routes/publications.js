@@ -240,6 +240,7 @@ publications.get("/publications-home", async (req, res, next) => {
         const processedRows = rows.map(row => {
             const imageUrls = row.images.split(",");
             const mainImageUrl = `${baseImageUrl}${imageUrls[0]}`;
+            console.log(mainImageUrl);
             return {
                 ...row,
                 mainImageUrl
