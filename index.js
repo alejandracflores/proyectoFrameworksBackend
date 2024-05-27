@@ -9,6 +9,8 @@ require('dotenv').config();
 //Routers
 const user = require('./routes/user');
 const publications = require('./routes/publications');
+const paypal = require('./routes/paypal');
+const webhooks = require('./routes/webhooks');
 
 //Middleware
 const auth = require('./middleware/auth');
@@ -33,6 +35,8 @@ app.use(express.urlencoded({ extended: true }));
 //app.use("/", index);
 app.use("/user", user);
 app.use("/publications", publications);
+app.use("/paypal", paypal);
+app.use('/webhooks', webhooks);
 
 // milldeware
 app.use(auth);
