@@ -167,16 +167,17 @@ user.post("/perfil-artist", upload.single('perfil'), async (req, res, next) => {
         }
 
         // Extraer los campos de la solicitud
-        const { social_media_instagram, social_media_x, social_media_tiktok, correo } = req.body;
+        const { social_media_instagram, social_media_x, social_media_tiktok, correo, social_media_otro } = req.body;
 
         // Verificar si al menos un campo está presente
-        if ((result != 'error') || social_media_instagram || social_media_x || social_media_tiktok || correo) {
+        if ((result != 'error') || social_media_instagram || social_media_x || social_media_tiktok || correo || social_media_otro) {
             let updates = [];
             if (result != 'error') updates.push(`photo = '${result}'`);
             if (social_media_instagram) updates.push(`social_media_instagram = '${social_media_instagram}'`);
             if (social_media_x) updates.push(`social_media_x = '${social_media_x}'`);
             if (social_media_tiktok) updates.push(`social_media_tiktok = '${social_media_tiktok}'`);
             if (correo) updates.push(`correo = '${correo}'`);
+            if (social_media_otro) updates.push(`social_media_otro = '${social_media_otro}'`);
 
             // Constructor Update Dinámico
             let query = `UPDATE artist SET ${updates.join(', ')} WHERE user_name = '${user_name}';`;
@@ -217,17 +218,33 @@ user.get("/perfil", async (req, res, next) => {
 
         // Obtener el user del comprador
         const user_name = decoded.user_name;
+         // URL base para las imágenes
+         const baseImageUrl = "https://bucketdealesitacomunarte.s3.amazonaws.com/";
 
         // Verificar si el usuario es un comprador o un vendedor
-        let query = `SELECT * FROM buyer WHERE user_name = '${user_name}';`;
+        let query = `
+        SELECT buyer.*, user.full_name
+        FROM buyer
+        INNER JOIN user ON buyer.user_name = user.user_name
+        WHERE buyer.user_name = '${user_name}';
+        `;
         let rows = await db.query(query);
         if (rows.length === 1) {
+            // Agregar la URL base a la columna photo
+            rows[0].photo = baseImageUrl + rows[0].photo;
             return res.status(200).json({ code: 200, message: rows[0] });
         }
 
-        query = `SELECT * FROM artist WHERE user_name = '${user_name}';`;
+        query = `
+        SELECT artist.*, user.full_name
+        FROM artist
+        INNER JOIN user ON artist.user_name = user.user_name
+        WHERE artist.user_name = '${user_name}';
+        `;
         rows = await db.query(query);
         if (rows.length === 1) {
+            // Agregar la URL base a la columna photo
+            rows[0].photo = baseImageUrl + rows[0].photo;
             return res.status(200).json({ code: 200, message: rows[0] });
         }
 
