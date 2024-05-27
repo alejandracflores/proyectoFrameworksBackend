@@ -1,5 +1,5 @@
-require('dotenv').config();
 const checkoutNodeJssdk = require('@paypal/checkout-server-sdk');
+require('dotenv').config();
 
 
 // Crear el entorno de PayPal
