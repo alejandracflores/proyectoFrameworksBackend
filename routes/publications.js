@@ -319,6 +319,62 @@ publications.get("/publications-artist/:artist_id", async (req, res, next) => {
     }
 });
 
+// Mostrar información de una publicación
+publications.get("/:id_work", async (req, res, next) => {
+    try {
+        const token = req.headers['token'];
+        // Verificar si el token no existe
+        if (!token) {
+            return res.status(401).json({code: 401, message: "Token no proporcionado"});
+        }
+
+        // Verificar si el token es válido
+        let decoded;
+        try {
+            decoded = jwt.verify(token, "debugkey");
+        } catch (error) {
+            return res.status(401).json({code: 401, message: "Token inválido"});
+        }
+
+        const id_work = req.params.id_work;
+
+        const query = `SELECT * FROM works WHERE id_work = '${id_work}'`;
+
+
+        try {
+            const rows = await db.query(query);
+
+            // Si no se encontraron publicaciones con el ID especificado, devolver un error 404
+            if (rows.length === 0) {
+                return res.status(404).json({ code: 404, message: "Publicación no encontrada" });
+            }
+
+            // URL base para las imágenes
+            const baseImageUrl = "https://bucketdealesitacomunarte.s3.amazonaws.com/";
+
+            // Procesar las filas para incluir la URL completa de cada imagen
+            const processedRows = rows.map(row => {
+                // Dividir las etiquetas
+                const labels = row.labels.split(",").map(label => label.trim());
+
+                // Dividir las imágenes y agregar la URL base
+                const imageUrls = row.images.split(",");
+                const imageUrlsWithBase = imageUrls.map(imageUrl => `${baseImageUrl}${imageUrl.trim()}`);
+                return {
+                    ...row,
+                    images: imageUrlsWithBase,
+                    labels: labels
+                };
+            });
+            return res.status(200).json({ code: 200, message: processedRows });
+        } catch (error) {
+            return res.status(500).json({ code: 500, message: "Ocurrió un error", error: error.message });
+        }
+    } catch (error) {
+        return res.status(501).json({ code: 501, message: "Ocurrió un error (servidor)", error: error.message});
+    }
+});
+
 
 // Buscar publicaciones por etiquetas
 publications.get("/search/:labels", async (req, res, next) => {
