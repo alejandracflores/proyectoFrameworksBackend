@@ -8,7 +8,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 
-// Register a user
+// Registrar usuario
 user.post("/signin", async (req, res, next) => {
     try {
         const { user_name, full_name, password, status } = req.body;
@@ -33,14 +33,14 @@ user.post("/signin", async (req, res, next) => {
             }
             return res.status(500).json({code: 500, message: "Ocurrió un error"});
         }
-        return res.status(500).json({code: 500, message: "Campos incompletos"});
+        return res.status(400).json({code: 400, message: "Campos incompletos"});
     } catch (error) {
         return res.status(501).json({code: 501, message: "Ocurrió un error (servidor)", error: error.message});
     }
 });
 
 
-// Login a user
+// Login a usuario
 user.post("/login", async (req, res, next) => {
     try {
         const { user_name, password } = req.body;
@@ -61,24 +61,11 @@ user.post("/login", async (req, res, next) => {
                 return res.status(200).json({code: 401, message: "Usuario y/o contraseña incorrectos"});
             }
         }
-        return res.status(500).json({code: 500, message: "Campos incompletos"});
+        return res.status(400).json({code: 400, message: "Campos incompletos"});
     } catch (error) {
         return res.status(501).json({ code: 501, message: "Ocurrió un error (servidor)", error: error.message});
     }
 });
-
-// user.post ("/prueba-imagen", upload.single('perfil'), async (req, res, next) => {
-//     // Imprimir datos del archivo
-//     console.log(req.file);
-//     // Imprime los datos del body (prueba)
-//     console.log(req.body.prueba);
-//     // Guarda el nombre de la imagen que se subió al bucket
-//     const result = await uploadFile(req.file);
-//     // Imprime el nombre de la imagen
-//     console.log(result);
-//     // Retorna el nombre de la imagen
-//     return res.status(200).json({code: 200, message: "Imagen subida correctamente", filename: result});
-// });
 
 
 // Editar o añadir la foto de perfil del comprador
@@ -135,13 +122,14 @@ user.post("/perfil-buyer", upload.single('perfil'), async (req, res, next) => {
     }
 });
 
-// Editar perfil de usuario vendedor
+
+// Editar perfil del artista
 user.post("/perfil-artist", upload.single('perfil'), async (req, res, next) => {
     try {
         // Verificar si el token no existe
         const token = req.headers['token'];
         if (!token) {
-            return res.status(401).json({code: 401, message: "Token no proporcionado"});
+            return res.status(401).json({ code: 401, message: "Token no proporcionado" });
         }
 
         // Verificar si el token es válido
@@ -149,7 +137,7 @@ user.post("/perfil-artist", upload.single('perfil'), async (req, res, next) => {
         try {
             decoded = jwt.verify(token, "debugkey");
         } catch (error) {
-            return res.status(401).json({code: 401, message: "Token inválido"});
+            return res.status(401).json({ code: 401, message: "Token inválido" });
         }
 
         // Obtener el user del artista
@@ -168,13 +156,8 @@ user.post("/perfil-artist", upload.single('perfil'), async (req, res, next) => {
         // Extraer los campos de la solicitud
         const { social_media_instagram, social_media_x, social_media_tiktok, correo, social_media_otro, cuenta_paypal } = req.body;
 
-        // Verificar si correo_paypal está presente
-        if (!cuenta_paypal) {
-            return res.status(400).json({ code: 400, message: "El campo correo_paypal es obligatorio" });
-        }
-
         // Verificar si al menos un campo está presente
-        if (result !== 'error' || social_media_instagram || social_media_x || social_media_tiktok || correo || social_media_otro || cuenta_paypal) {
+        if ((result != 'error' || social_media_instagram || social_media_x || social_media_tiktok || correo || social_media_otro || cuenta_paypal)) {
             let updates = [];
             if (result !== 'error') updates.push(`photo = '${result}'`);
             if (social_media_instagram) updates.push(`social_media_instagram = '${social_media_instagram}'`);
@@ -184,13 +167,25 @@ user.post("/perfil-artist", upload.single('perfil'), async (req, res, next) => {
             if (social_media_otro) updates.push(`social_media_otro = '${social_media_otro}'`);
             if (cuenta_paypal) updates.push(`cuenta_paypal = '${cuenta_paypal}'`);
 
-            // Constructor Update Dinámico
+            // Constructor Update Dinámico para la tabla artist
             let query = `UPDATE artist SET ${updates.join(', ')} WHERE user_name = '${user_name}';`;
             try {
                 const rows = await db.query(query);
 
                 if (rows.affectedRows == 1) {
-                    return res.status(200).json({ code: 200, message: "Datos de perfil actualizados correctamente" });
+                    // Si cuenta_paypal fue actualizado, actualizar también todas las publicaciones del usuario
+                    if (cuenta_paypal) {
+                        let updatePublicationsQuery = `UPDATE works SET payment = '${cuenta_paypal}' WHERE artist_id = '${user_name}';`;
+                        const updatePublicationsResult = await db.query(updatePublicationsQuery);
+                        
+                        if (updatePublicationsResult.affectedRows >= 1) {
+                            return res.status(200).json({ code: 200, message: "Perfil y publicaciones actualizadas correctamente" });
+                        } else {
+                            return res.status(500).json({ code: 500, message: "Perfil actualizado pero ocurrió un error al actualizar las publicaciones" });
+                        }
+                    } else {
+                        return res.status(200).json({ code: 200, message: "Perfil actualizado correctamente" });
+                    }
                 }
                 return res.status(500).json({ code: 500, message: "Ocurrió un error al actualizar los datos de perfil" });
             } catch (error) {
@@ -254,7 +249,7 @@ user.get("/perfil", async (req, res, next) => {
             return res.status(200).json({ code: 200, message: rows[0] });
         }
 
-        return res.status(404).json({ code: 404, message: "Usuario no encontrado" });
+        return res.status(402).json({ code: 402, message: "Usuario no encontrado" });
     } catch (error) {
         return res.status(501).json({ code: 501, message: "Ocurrió un error (servidor)", error: error.message});
     }

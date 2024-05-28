@@ -53,18 +53,18 @@ publications.post("/add-publication", upload.array('images', 10), async (req, re
         }
 
         // Variable de los campos
-        const { title, description, status, price, payment, labels, stock } = req.body;
+        const { title, description, status, price, labels, stock } = req.body;
 
         // Verificar si los campos necesarios existen
-        if (title && imagePaths.length > 0 && description && status && price && payment && labels && stock) {
+        if (title && imagePaths.length > 0 && description && status && price && labels && stock) {
             // Convertir los labels a una cadena separada por comas
             const labelsFinal = Array.isArray(labels) ? labels.join(',') : labels;
             // Convertir las imágenes a una cadena separada por comas
             const imagesFinal = imagePaths.join(',');
 
             // Insertar la publicación
-            let query = "INSERT INTO works (artist_id, title, images, description, status, price, payment, labels, stock) ";
-            query += `VALUES ('${artist_id}', '${title}', '${imagesFinal}', '${description}', '${status}', '${price}', '${payment}', '${labelsFinal}', '${stock}');`;
+            let query = "INSERT INTO works (artist_id, title, images, description, status, price, labels, stock) ";
+            query += `VALUES ('${artist_id}', '${title}', '${imagesFinal}', '${description}', '${status}', '${price}', '${labelsFinal}', '${stock}');`;
 
             // Ejecutar la consulta
             try {
@@ -79,7 +79,7 @@ publications.post("/add-publication", upload.array('images', 10), async (req, re
 
                 // Verificar si la publicación se añadió correctamente
                 if(updateResult.affectedRows == 1) {
-                    return res.status(201).json({ code: 201, message: "Publicación añadida y id_works actualizado correctamente" });
+                    return res.status(200).json({ code: 200, message: "Publicación añadida y id_works actualizado correctamente" });
                 }
                 // En caso de que no se haya actualizado la columna id_works
                 return res.status(500).json({code: 500, message: "Publicación añadida pero fallo al actualizar id_works"});
@@ -143,10 +143,10 @@ publications.post("/edit-publication/:id", upload.array('images', 10), async (re
         }
 
         // Variable de los campos
-        const { title, description, status, price, payment, labels, stock } = req.body;
+        const { title, description, status, price, labels, stock } = req.body;
 
         // Verificar si los campos necesarios existen
-        if (title || imagePaths.length > 0 || description || status || price || payment || labels || stock) {
+        if (title || imagePaths.length > 0 || description || status || price || labels || stock) {
             // Convertir los labels a una cadena separada por comas
             const labelsFinal = Array.isArray(labels) ? labels.join(',') : labels;
             // Convertir las imágenes a una cadena separada por comas
@@ -158,7 +158,6 @@ publications.post("/edit-publication/:id", upload.array('images', 10), async (re
             if (description) updates.push(`description = '${description}'`);
             if (status) updates.push(`status = '${status}'`);
             if (price) updates.push(`price = '${price}'`);
-            if (payment) updates.push(`payment = '${payment}'`);
             if (labels) updates.push(`labels = '${labelsFinal}'`);
             if (stock) updates.push(`stock = '${stock}'`);
 
@@ -217,7 +216,7 @@ publications.delete("/delete-publication/:id", async (req, res, next) => {
         try {
             const rows = await db.query(query);
             if (rows.length === 0) {
-                return res.status(404).json({ code: 404, message: "Publicación no encontrada o no tienes permiso para eliminarla" });
+                return res.status(402).json({ code: 402, message: "Publicación no encontrada o no tienes permiso para eliminarla" });
             }
         } catch (error) {
             return res.status(500).json({ code: 500, message: "Error al verificar la publicación", error: error.message });
@@ -364,7 +363,7 @@ publications.get("/:id_work", async (req, res, next) => {
 
             // Si no se encontraron publicaciones con el ID especificado, devolver un error 404
             if (rows.length === 0) {
-                return res.status(404).json({ code: 404, message: "Publicación no encontrada" });
+                return res.status(402).json({ code: 402, message: "Publicación no encontrada" });
             }
 
             // URL base para las imágenes
