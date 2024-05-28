@@ -11,6 +11,7 @@ const user = require('./routes/user');
 const publications = require('./routes/publications');
 const paypal = require('./routes/paypal');
 const webhooks = require('./routes/webhooks');
+const sales = require('./routes/sales');
 
 //Middleware
 const auth = require('./middleware/auth');
@@ -37,6 +38,7 @@ app.use("/user", user);
 app.use("/publications", publications);
 app.use("/paypal", paypal);
 app.use('/webhooks', webhooks);
+app.use('/sales', sales);
 
 // milldeware
 app.use(auth);

@@ -437,6 +437,13 @@ publications.get("/search/:labels", async (req, res, next) => {
     }
 });
 
+// Get all publications
+// publications.get('/', async (req, res, next) => {
+//     const query = "SELECT * FROM works";
+//     const rows = await db.query(query);
+//     return res.status(200).json({ code: 200, message: rows });
+// });
+
 
 module.exports = publications;
 
