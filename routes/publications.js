@@ -31,6 +31,16 @@ publications.post("/add-publication", upload.array('images', 10), async (req, re
             return res.status(403).json({code: 403, message: "No tienes permisos para agregar publicaciones"});
         }
 
+        // Obtener el id del artista
+        const artist_id = decoded.user_name;
+
+        // Verificar si el correo_paypal no está nulo
+        let paypalQuery = `SELECT cuenta_paypal FROM artist WHERE user_name = '${artist_id}'`;
+        const paypalResult = await db.query(paypalQuery);
+        if (paypalResult.length === 0 || !paypalResult[0].cuenta_paypal) {
+            return res.status(400).json({ code: 400, message: "No se puede añadir una publicación sin un correo de PayPal válido" });
+        }
+
         // Subir las imágenes al bucket
         let imagePaths = [];
         if (req.files && req.files.length > 0) {
@@ -44,8 +54,6 @@ publications.post("/add-publication", upload.array('images', 10), async (req, re
 
         // Variable de los campos
         const { title, description, status, price, payment, labels, stock } = req.body;
-        // Obtener el id del artista
-        const artist_id = decoded.user_name;
 
         // Verificar si los campos necesarios existen
         if (title && imagePaths.length > 0 && description && status && price && payment && labels && stock) {
@@ -111,6 +119,16 @@ publications.post("/edit-publication/:id", upload.array('images', 10), async (re
         // Verificar si el usuario es un artista
         if (decoded.status !== 'Vendedor') {
             return res.status(403).json({code: 403, message: "No tienes permisos para actualizar publicaciones"});
+        }
+
+        // Obtener el id del artista
+        const artist_id = decoded.user_name;
+
+        // Verificar si el correo_paypal no está nulo
+        let paypalQuery = `SELECT cuenta_paypal FROM artist WHERE user_name = '${artist_id}'`;
+        const paypalResult = await db.query(paypalQuery);
+        if (paypalResult.length === 0 || !paypalResult[0].cuenta_paypal) {
+            return res.status(400).json({ code: 400, message: "No se puede añadir una publicación sin un correo de PayPal válido" });
         }
 
         // Subir las imágenes al bucket

@@ -135,8 +135,7 @@ user.post("/perfil-buyer", upload.single('perfil'), async (req, res, next) => {
     }
 });
 
-
-// Editar perfil del vendedor
+// Editar perfil de usuario vendedor
 user.post("/perfil-artist", upload.single('perfil'), async (req, res, next) => {
     try {
         // Verificar si el token no existe
@@ -167,17 +166,23 @@ user.post("/perfil-artist", upload.single('perfil'), async (req, res, next) => {
         }
 
         // Extraer los campos de la solicitud
-        const { social_media_instagram, social_media_x, social_media_tiktok, correo, social_media_otro } = req.body;
+        const { social_media_instagram, social_media_x, social_media_tiktok, correo, social_media_otro, cuenta_paypal } = req.body;
+
+        // Verificar si correo_paypal está presente
+        if (!cuenta_paypal) {
+            return res.status(400).json({ code: 400, message: "El campo correo_paypal es obligatorio" });
+        }
 
         // Verificar si al menos un campo está presente
-        if ((result != 'error') || social_media_instagram || social_media_x || social_media_tiktok || correo || social_media_otro) {
+        if (result !== 'error' || social_media_instagram || social_media_x || social_media_tiktok || correo || social_media_otro || cuenta_paypal) {
             let updates = [];
-            if (result != 'error') updates.push(`photo = '${result}'`);
+            if (result !== 'error') updates.push(`photo = '${result}'`);
             if (social_media_instagram) updates.push(`social_media_instagram = '${social_media_instagram}'`);
             if (social_media_x) updates.push(`social_media_x = '${social_media_x}'`);
             if (social_media_tiktok) updates.push(`social_media_tiktok = '${social_media_tiktok}'`);
             if (correo) updates.push(`correo = '${correo}'`);
             if (social_media_otro) updates.push(`social_media_otro = '${social_media_otro}'`);
+            if (cuenta_paypal) updates.push(`cuenta_paypal = '${cuenta_paypal}'`);
 
             // Constructor Update Dinámico
             let query = `UPDATE artist SET ${updates.join(', ')} WHERE user_name = '${user_name}';`;
@@ -187,17 +192,18 @@ user.post("/perfil-artist", upload.single('perfil'), async (req, res, next) => {
                 if (rows.affectedRows == 1) {
                     return res.status(200).json({ code: 200, message: "Datos de perfil actualizados correctamente" });
                 }
-                return res.status(500).json({code: 500, message: "Ocurrió un error al actualizar los datos de perfil"});
+                return res.status(500).json({ code: 500, message: "Ocurrió un error al actualizar los datos de perfil" });
             } catch (error) {
-                return res.status(500).json({code: 500, message: "Ocurrió un error", error: error.message});
+                return res.status(500).json({ code: 500, message: "Ocurrió un error", error: error.message });
             }
         } else {
-            return res.status(400).json({code: 400, message: "No se proporcionó ningún campo para actualizar"});
+            return res.status(400).json({ code: 400, message: "No se proporcionó ningún campo para actualizar" });
         }
     } catch (error) {
-        return res.status(501).json({ code: 501, message: "Ocurrió un error (servidor)", error: error.message});
+        return res.status(501).json({ code: 501, message: "Ocurrió un error (servidor)", error: error.message });
     }
 });
+
 
 // Mostrar información del usuario
 user.get("/perfil", async (req, res, next) => {
