@@ -439,7 +439,7 @@ publications.get("/:id_work", async (req, res, next) => {
 
 
 // Buscar publicaciones por etiquetas
-publications.get("/search/", async (req, res, next) => {
+publications.get("/search/:labels", async (req, res, next) => {
     try {
         // Verificar si el token no existe
         const token = req.headers['token'];
@@ -454,7 +454,7 @@ publications.get("/search/", async (req, res, next) => {
             return res.status(401).json({code: 401, message: "Token inválido"});
         }
 
-        const labels = req.body.labels.split(',');
+        const labels = req.params.labels.split(',');
 
         const query = `SELECT * FROM works WHERE labels REGEXP '${labels.join('|')}'`;
 
