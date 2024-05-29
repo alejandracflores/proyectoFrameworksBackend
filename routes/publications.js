@@ -337,7 +337,7 @@ publications.get("/publications-yours", async (req, res, next) => {
 });
 
 // Mostrar publicaciones de un artista
-publications.get("/publications/:artist_id", async (req, res, next) => {
+publications.get("/publications-artist/:artist_id", async (req, res, next) => {
     try {
         const token = req.headers['token'];
         // Verificar si el token no existe
