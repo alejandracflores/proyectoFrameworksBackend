@@ -99,7 +99,7 @@ publications.post("/add-publication", upload.array('images', 10), async (req, re
 });
 
 // Editar publicación
-publications.post("/edit-publication/:id", upload.array('images', 10), async (req, res, next) => {
+publications.put("/edit-publication/:id", upload.array('images', 10), async (req, res, next) => {
     try {
         const token = req.headers['token'];
         const id_work = parseInt(req.params.id, 10);
@@ -287,7 +287,7 @@ publications.get("/publications-home", async (req, res, next) => {
 });
 
 // Mostrar publicaciones de un artista
-publications.get("/publications-artist/:artist_id", async (req, res, next) => {
+publications.get("/publications-artist/", async (req, res, next) => {
     try {
         const token = req.headers['token'];
         // Verificar si el token no existe
@@ -308,7 +308,7 @@ publications.get("/publications-artist/:artist_id", async (req, res, next) => {
             return res.status(403).json({code: 403, message: "No tienes permisos para ver tus publicaciones"});
         }
 
-        const artist_id = req.params.artist_id;
+        const artist_id = req.body.artist_id;
 
         const query = `SELECT * FROM works WHERE artist_id = '${artist_id}'`;
         try {
@@ -394,7 +394,7 @@ publications.get("/:id_work", async (req, res, next) => {
 
 
 // Buscar publicaciones por etiquetas
-publications.get("/search/:labels", async (req, res, next) => {
+publications.get("/search/", async (req, res, next) => {
     try {
         // Verificar si el token no existe
         const token = req.headers['token'];
@@ -409,7 +409,8 @@ publications.get("/search/:labels", async (req, res, next) => {
             return res.status(401).json({code: 401, message: "Token inválido"});
         }
 
-        const labels = req.params.labels.split(',');
+        const labels = req.body.labels.split(',');
+
         const query = `SELECT * FROM works WHERE labels REGEXP '${labels.join('|')}'`;
 
         try {

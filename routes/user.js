@@ -69,7 +69,7 @@ user.post("/login", async (req, res, next) => {
 
 
 // Editar o añadir la foto de perfil del comprador
-user.post("/perfil-buyer", upload.single('perfil'), async (req, res, next) => {
+user.put("/perfil-buyer", upload.single('perfil'), async (req, res, next) => {
     try {
         // Verificar si el token no existe
         const token = req.headers['token'];
@@ -124,7 +124,7 @@ user.post("/perfil-buyer", upload.single('perfil'), async (req, res, next) => {
 
 
 // Editar perfil del artista
-user.post("/perfil-artist", upload.single('perfil'), async (req, res, next) => {
+user.put("/perfil-artist", upload.single('perfil'), async (req, res, next) => {
     try {
         // Verificar si el token no existe
         const token = req.headers['token'];
@@ -255,6 +255,60 @@ user.get("/perfil", async (req, res, next) => {
     }
 });
 
+// Cargar perfil de otro usuario
+user.get("/perfil/:user_name", async (req, res, next) => {
+    try {
+        // Verificar si el token no existe
+        const token = req.headers['token'];
+        if (!token) {
+            return res.status(401).json({code: 401, message: "Token no proporcionado"});
+        }
+
+        // Verificar si el token es válido
+        let decoded;
+        try {
+            decoded = jwt.verify(token, "debugkey");
+        } catch (error) {
+            return res.status(401).json({code: 401, message: "Token inválido"});
+        }
+
+        // Obtener el user del comprador
+        const user_name = req.params.user_name;
+         // URL base para las imágenes
+         const baseImageUrl = "https://bucketdealesitacomunarte.s3.amazonaws.com/";
+
+        // Verificar si el usuario es un comprador o un vendedor
+        let query = `
+        SELECT buyer.*, user.full_name
+        FROM buyer
+        INNER JOIN user ON buyer.user_name = user.user_name
+        WHERE buyer.user_name = '${user_name}';
+        `;
+        let rows = await db.query(query);
+        if (rows.length === 1) {
+            // Agregar la URL base a la columna photo
+            rows[0].photo = baseImageUrl + rows[0].photo;
+            return res.status(200).json({ code: 200, message: rows[0] });
+        }
+
+        query = `
+        SELECT artist.*, user.full_name
+        FROM artist
+        INNER JOIN user ON artist.user_name = user.user_name
+        WHERE artist.user_name = '${user_name}';
+        `;
+        rows = await db.query(query);
+        if (rows.length === 1) {
+            // Agregar la URL base a la columna photo
+            rows[0].photo = baseImageUrl + rows[0].photo;
+            return res.status(200).json({ code: 200, message: rows[0] });
+        }
+
+        return res.status(402).json({ code: 402, message: "Usuario no encontrado" });
+    } catch (error) {
+        return res.status(501).json({ code: 501, message: "Ocurrió un error (servidor)", error: error.message});
+    }
+});
 
 
 // Get a users
