@@ -9,6 +9,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 
+// Subir calificaciones de obras
 sales.post('/raise-scores', async (req, res, next) => {
     try {
         const token = req.headers['token'];
@@ -68,6 +69,43 @@ sales.post('/raise-scores', async (req, res, next) => {
         return res.status(501).json({ code: 501, message: "Ocurrió un error (servidor)", error: error.message});
     }
 });
+
+
+// Subir ventas
+sales.post('/purchase', async (req, res, next) => {
+    try {
+        const token = req.headers['token'];
+        // Verificar si el token no existe
+        if (!token) {
+            return res.status(401).json({code: 401, message: "Token no proporcionado"});
+        }
+
+        // Verificar si el token es válido
+        let decoded;
+        try {
+            decoded = jwt.verify(token, "debugkey");
+        } catch (error) {
+            return res.status(401).json({code: 401, message: "Token inválido"});
+        }
+
+        // Obtener los datos
+        const { id_work, artist_id, quantity, total, total_amount } = req.body;
+        const user_name = decoded.user_name;
+
+        
+
+        if (rows.affectedRows == 1) {
+            return res.status(200).json({ code: 200, message: "Compra realizada correctamente" });
+        } else {
+            return res.status(500).json({ code: 500, message: "Ocurrió un error " });
+        }
+    } catch (error) {
+        return res.status(501).json({ code: 501, message: "Ocurrió un error (servidor)", error: error.message});
+    }
+});
+
+// Ver ventas por usuario
+
 
 // sales.get('/', async (req, res, next) => {
 //     const query = "SELECT * FROM sales";

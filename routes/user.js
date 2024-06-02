@@ -231,9 +231,16 @@ user.get("/perfil", async (req, res, next) => {
         `;
         let rows = await db.query(query);
         if (rows.length === 1) {
-            // Agregar la URL base a la columna photo
-            rows[0].photo = baseImageUrl + rows[0].photo;
-            return res.status(200).json({ code: 200, message: rows[0] });
+            if (rows[0].photo == '') {
+                // En caso de que no tenga foto de perfil
+                rows[0].photo = null;
+                return res.status(200).json({ code: 200, message: rows[0] });
+            }
+            else {
+                // Agregar la URL base a la columna photo
+                rows[0].photo = baseImageUrl + rows[0].photo;
+                return res.status(200).json({ code: 200, message: rows[0] });
+            }
         }
 
         query = `
@@ -244,9 +251,16 @@ user.get("/perfil", async (req, res, next) => {
         `;
         rows = await db.query(query);
         if (rows.length === 1) {
-            // Agregar la URL base a la columna photo
-            rows[0].photo = baseImageUrl + rows[0].photo;
-            return res.status(200).json({ code: 200, message: rows[0] });
+            if (rows[0].photo == '') {
+                // En caso de que no tenga foto de perfil
+                rows[0].photo = null;
+                return res.status(200).json({ code: 200, message: rows[0] });
+            }
+            else {
+                // Agregar la URL base a la columna photo
+                rows[0].photo = baseImageUrl + rows[0].photo;
+                return res.status(200).json({ code: 200, message: rows[0] });
+            }
         }
 
         return res.status(402).json({ code: 402, message: "Usuario no encontrado" });
@@ -286,9 +300,17 @@ user.get("/perfil/:user_name", async (req, res, next) => {
         `;
         let rows = await db.query(query);
         if (rows.length === 1) {
-            // Agregar la URL base a la columna photo
-            rows[0].photo = baseImageUrl + rows[0].photo;
-            return res.status(200).json({ code: 200, message: rows[0] });
+            if (rows[0].photo == '') {
+                // En caso de que no tenga foto de perfil
+                rows[0].photo = null;
+                return res.status(200).json({ code: 200, message: rows[0] });
+            }
+            else {
+                // Agregar la URL base a la columna photo
+                rows[0].photo = baseImageUrl + rows[0].photo;
+                return res.status(200).json({ code: 200, message: rows[0] });
+            }
+            
         }
 
         query = `
@@ -299,9 +321,16 @@ user.get("/perfil/:user_name", async (req, res, next) => {
         `;
         rows = await db.query(query);
         if (rows.length === 1) {
-            // Agregar la URL base a la columna photo
-            rows[0].photo = baseImageUrl + rows[0].photo;
-            return res.status(200).json({ code: 200, message: rows[0] });
+            if (rows[0].photo == '') {
+                // En caso de que no tenga foto de perfil
+                rows[0].photo = null;
+                return res.status(200).json({ code: 200, message: rows[0] });
+            }
+            else {
+                // Agregar la URL base a la columna photo
+                rows[0].photo = baseImageUrl + rows[0].photo;
+                return res.status(200).json({ code: 200, message: rows[0] });
+            }
         }
 
         return res.status(402).json({ code: 402, message: "Usuario no encontrado" });
