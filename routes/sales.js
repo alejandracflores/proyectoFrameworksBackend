@@ -129,7 +129,7 @@ sales.post('/purchase', async (req, res, next) => {
         const paypalPayments = Object.values(artistPayments);
 
         // Llamar a la función de PayPal
-        const response = await axios.post('http://localhost:3000/paypal/create', { payments: paypalPayments });
+        const response = await axios.post('https://proyectoframeworksbackend-production.up.railway.app/paypal/create', { payments: paypalPayments });
         const paypalResponses = response.data;
 
         res.status(200).json({ code: 200, message: paypalResponses});
