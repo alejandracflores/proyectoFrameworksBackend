@@ -5,7 +5,7 @@ const db = require('../config/database');
 const axios = require('axios');
 
 
-// Subir calificaciones
+// Subir calificaciones de obras
 sales.post('/raise-scores', async (req, res, next) => {
     try {
         const token = req.headers['token'];
@@ -65,6 +65,7 @@ sales.post('/raise-scores', async (req, res, next) => {
         return res.status(501).json({ code: 501, message: "Ocurrió un error (servidor)", error: error.message});
     }
 });
+
 
 // Realizar compra
 sales.post('/purchase', async (req, res, next) => {
