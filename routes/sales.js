@@ -90,11 +90,16 @@ sales.post('/purchase', async (req, res, next) => {
         // Pago por artista
         let artistPayments = {};
 
+        // Insertar en purchases una sola vez por compra
+        let query = `INSERT INTO purchases (user_name, total_ammount) VALUES ('${user_name}', ${total_ammount})`;
+        let rows = await db.query(query);
+        let id_purchase = rows.insertId;
+
         for (const purchase of purchases) {
             const { id_work, quantity, total } = purchase;
 
             // Obtener datos de la obra incluyendo el método de pago y el artista
-            let query = `SELECT artist_id, payment FROM works WHERE id_work = ${id_work}`;
+            query = `SELECT artist_id, payment FROM works WHERE id_work = ${id_work}`;
             let [work] = await db.query(query);
 
             if (!work) {
@@ -105,13 +110,7 @@ sales.post('/purchase', async (req, res, next) => {
             query = `UPDATE works SET stock = stock - ${quantity} WHERE id_work = ${id_work}`;
             await db.query(query);
 
-            // Insertar en purchases
-            query = `INSERT INTO purchases (user_name, total_ammount) VALUES ('${user_name}', ${total_ammount})`;
-            let rows = await db.query(query);
-
-            let id_purchase = rows.insertId;
-
-            // Insertar en purchases_works
+            // Insertar en purchases_works por cada artículo
             query = `INSERT INTO purchases_works (id_purchase, id_work, quantity, total) VALUES (${id_purchase}, ${id_work}, '${quantity}', ${total})`;
             await db.query(query);
 
@@ -119,7 +118,7 @@ sales.post('/purchase', async (req, res, next) => {
             if (!artistPayments[work.artist_id]) {
                 artistPayments[work.artist_id] = {
                     amount: 0,
-                    sellerEmail: work.cuenta_paypal
+                    sellerEmail: work.payment
                 };
             }
             artistPayments[work.artist_id].amount += total;
