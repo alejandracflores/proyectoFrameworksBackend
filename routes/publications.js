@@ -54,24 +54,25 @@ publications.post("/add-publication", upload.array('images', 10), async (req, re
 
         // Variable de los campos
         const { title, description, status, price, labels, stock } = req.body;
+        const payment = paypalResult[0].cuenta_paypal;
 
         // Verificar si los campos necesarios existen
-        if (title && imagePaths.length > 0 && description && status && price && labels && stock) {
+        if (title && imagePaths.length > 0 && description && status && price && labels && stock && payment) {
             // Convertir los labels a una cadena separada por comas
             const labelsFinal = Array.isArray(labels) ? labels.join(',') : labels;
             // Convertir las imágenes a una cadena separada por comas
             const imagesFinal = imagePaths.join(',');
 
             // Insertar la publicación
-            let query = "INSERT INTO works (artist_id, title, images, description, status, price, labels, stock) ";
-            query += `VALUES ('${artist_id}', '${title}', '${imagesFinal}', '${description}', '${status}', '${price}', '${labelsFinal}', '${stock}');`;
+            let query = "INSERT INTO works (artist_id, title, images, description, status, price, labels, stock, payment) ";
+            query += `VALUES ('${artist_id}', '${title}', '${imagesFinal}', '${description}', '${status}', '${price}', '${labelsFinal}', '${stock}', '${payment}');`;
 
             const rows = await db.query(query);
             if (rows.affectedRows == 1) {
-                return res.status(200).json({ code: 200, message: "Publicación añadida y id_works actualizado correctamente" });
+                return res.status(200).json({ code: 200, message: "Publicación añadida correctamente" });
             }
                 // En caso de que no se haya actualizado la columna id_works
-                return res.status(500).json({code: 500, message: "Publicación añadida pero fallo al actualizar id_works"});
+                return res.status(500).json({code: 500, message: "Error al añadir la publicación"});
         } 
         // En caso de campos incompletos
         else {
