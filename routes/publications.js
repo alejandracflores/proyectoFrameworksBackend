@@ -66,28 +66,12 @@ publications.post("/add-publication", upload.array('images', 10), async (req, re
             let query = "INSERT INTO works (artist_id, title, images, description, status, price, labels, stock) ";
             query += `VALUES ('${artist_id}', '${title}', '${imagesFinal}', '${description}', '${status}', '${price}', '${labelsFinal}', '${stock}');`;
 
-            // Ejecutar la consulta
-            try {
-                const result = await db.query(query);
-                const newWorkId = result.insertId;
-
-                // Actualizar la columna id_works en la tabla artist
-                let updateQuery = `UPDATE artist SET works = CONCAT(IFNULL(works, ''), 
-                                    IF(works IS NOT NULL AND works != '', ',', ''), 
-                                    '${newWorkId}') WHERE user_name = '${artist_id}';`;
-                const updateResult = await db.query(updateQuery);
-
-                // Verificar si la publicación se añadió correctamente
-                if(updateResult.affectedRows == 1) {
-                    return res.status(200).json({ code: 200, message: "Publicación añadida y id_works actualizado correctamente" });
-                }
+            const rows = await db.query(query);
+            if (rows.affectedRows == 1) {
+                return res.status(200).json({ code: 200, message: "Publicación añadida y id_works actualizado correctamente" });
+            }
                 // En caso de que no se haya actualizado la columna id_works
                 return res.status(500).json({code: 500, message: "Publicación añadida pero fallo al actualizar id_works"});
-            } 
-            // En caso de error
-            catch (error) {
-                return res.status(500).json({code: 500, message: "Ocurrió un error al añadir la publicación", error: error.message});
-            }
         } 
         // En caso de campos incompletos
         else {
@@ -227,10 +211,6 @@ publications.delete("/delete-publication/:id", async (req, res, next) => {
         try {
             const result = await db.query(query);
             if (result.affectedRows === 1) {
-                // Actualizar la columna works en la tabla artist
-                let updateQuery = `UPDATE artist SET works = TRIM(BOTH ',' FROM REPLACE(CONCAT(',', works, ','), CONCAT(',', ${id_work}, ','), ',')) WHERE user_name = '${artist_id}'`;
-                await db.query(updateQuery, [id_work, artist_id]);
-
                 return res.status(200).json({ code: 200, message: "Publicación eliminada correctamente" });
             } else {
                 return res.status(500).json({ code: 500, message: "Ocurrió un error al eliminar la publicación" });
