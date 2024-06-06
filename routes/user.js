@@ -74,7 +74,7 @@ user.put("/perfil-buyer", upload.single('perfil'), async (req, res, next) => {
         // Verificar si el token no existe
         const token = req.headers['token'];
         if (!token) {
-            return res.status(401).json({code: 401, message: "Token no proporcionado"});
+            return res.status(401).json({ code: 401, message: "Token no proporcionado" });
         }
 
         // Verificar si el token es válido
@@ -82,43 +82,49 @@ user.put("/perfil-buyer", upload.single('perfil'), async (req, res, next) => {
         try {
             decoded = jwt.verify(token, "debugkey");
         } catch (error) {
-            return res.status(401).json({code: 401, message: "Token inválido"});
+            return res.status(401).json({ code: 401, message: "Token inválido" });
         }
-        // Obetener el user del comprador
+
+        // Obtener el user del artista
         const user_name = decoded.user_name;
 
         // Imprimir datos del archivo
         console.log(req.file);
-        // Imprime los datos del body (prueba)
-        console.log(req.body.prueba);
-        // Guarda el nombre de la imagen que se subió al bucket
-        
-
-        try {
-            const result = await uploadFile(req.file);
-            
+        let result = 'error';
+        if (req.file) {
+            // Guarda el nombre de la imagen que se subió al bucket
+            result = await uploadFile(req.file);
             // Imprime el nombre de la imagen
             console.log(result);
+        }
 
-            // Verificar si los campos necesarios existen
-            if (result != 'error') {
-                let query = `UPDATE buyer SET photo = '${result}' WHERE user_name = '${user_name}';`;
-                try {
-                    const rows = await db.query(query);
+        // Extraer los campos de la solicitud
+        const { correo } = req.body;
 
-                    if(rows.affectedRows == 1) {
-                        return res.status(200).json({ code: 200, message: "Foto de perfil actualizada correctamente" });
-                    }
-                    return res.status(500).json({code: 500, message: "Ocurrió un error al actualizar la foto de perfil"});
-                } catch (error) {
-                    return res.status(500).json({code: 500, message: "Ocurrió un error", error: error.message});
+        // Verificar si al menos un campo está presente
+        if ((result != 'error' || correo)) {
+            let updates = [];
+            if (result !== 'error') updates.push(`photo = '${result}'`);
+            if (correo) updates.push(`correo = '${correo}'`);
+
+            // Constructor Update Dinámico para la tabla artist
+            let query = `UPDATE buyer SET ${updates.join(', ')} WHERE user_name = '${user_name}';`;
+            try {
+                const rows = await db.query(query);
+
+                if (rows.affectedRows == 1) {
+                    // Si se actualizó la foto de perfil, regresar el mensaje de éxito
+                    return res.status(200).json({ code: 200, message: "Perfil actualizado correctamente" });
                 }
+                return res.status(500).json({ code: 500, message: "Ocurrió un error al actualizar los datos de perfil" });
+            } catch (error) {
+                return res.status(500).json({ code: 500, message: "Ocurrió un error", error: error.message });
             }
-        } catch (error) {
-            return res.status(400).json({code: 400, message: "Campos incompletos"});
+        } else {
+            return res.status(400).json({ code: 400, message: "No se proporcionó ningún campo para actualizar" });
         }
     } catch (error) {
-        return res.status(501).json({ code: 501, message: "Ocurrió un error (servidor)", error: error.message});
+        return res.status(501).json({ code: 501, message: "Ocurrió un error (servidor)", error: error.message });
     }
 });
 
