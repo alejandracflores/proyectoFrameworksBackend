@@ -455,21 +455,20 @@ publications.get("/search/:labels", async (req, res, next) => {
 
         try {
             const rows = await db.query(query);
-
             // URL base para las imágenes
             const baseImageUrl = "https://bucketdealesitacomunarte.s3.amazonaws.com/";
 
-            // Procesar las filas para incluir la URL completa de la imagen principal
+            // Procesar las filas para incluir la URL completa de cada imagen
             const processedRows = rows.map(row => {
+                // Dividir las imágenes y agregar la URL base
                 const imageUrls = row.images.split(",");
-                const mainImageUrl = `${baseImageUrl}${imageUrls[0]}`;
+                const imageUrlsWithBase = imageUrls.map(imageUrl => `${baseImageUrl}${imageUrl.trim()}`);
                 return {
                     ...row,
-                    mainImageUrl
+                    images: imageUrlsWithBase,
                 };
             });
-
-            return res.status(200).json({ code: 200, message: rows });
+            return res.status(200).json({ code: 200, message: processedRows });
         } catch (error) {
             return res.status(500).json({ code: 500, message: "Ocurrió un error", error: error.message });
         }
