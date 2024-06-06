@@ -41,6 +41,13 @@ publications.post("/add-publication", upload.array('images', 10), async (req, re
             return res.status(400).json({ code: 400, message: "No se puede añadir una publicación sin un correo de PayPal válido" });
         }
 
+        // Verificar si el correo no está nulo
+        let correoQuery = `SELECT correo FROM artist WHERE user_name = '${artist_id}'`;
+        const correoResult = await db.query(correoQuery);
+        if (correoResult.length === 0 || !correoResult[0].correo) {
+            return res.status(400).json({ code: 400, message: "No se puede añadir una publicación sin un correo electrónico" });
+        }
+
         // Subir las imágenes al bucket
         let imagePaths = [];
         if (req.files && req.files.length > 0) {
@@ -114,6 +121,13 @@ publications.put("/edit-publication/:id", upload.array('images', 10), async (req
         const paypalResult = await db.query(paypalQuery);
         if (paypalResult.length === 0 || !paypalResult[0].cuenta_paypal) {
             return res.status(400).json({ code: 400, message: "No se puede añadir una publicación sin un correo de PayPal válido" });
+        }
+
+        // Verificar si el correo no está nulo
+        let correoQuery = `SELECT correo FROM artist WHERE user_name = '${artist_id}'`;
+        const correoResult = await db.query(correoQuery);
+        if (correoResult.length === 0 || !correoResult[0].correo) {
+            return res.status(400).json({ code: 400, message: "No se puede añadir una publicación sin un correo electrónico" });
         }
 
         // Subir las imágenes al bucket

@@ -87,6 +87,23 @@ sales.post('/purchase', async (req, res, next) => {
         
         const user_name = decoded.user_name;
 
+        // Verificar el tipo de usuario
+        if (decoded.status !== 'Vendedor') {
+            // Verificar si el correo no está nulo
+            let correoQuery = `SELECT correo FROM artist WHERE user_name = '${user_name}'`;
+            const correoResult = await db.query(correoQuery);
+            if (correoResult.length === 0 || !correoResult[0].correo) {
+                return res.status(400).json({ code: 400, message: "No se puede comprar una obra sin un correo electrónico" });
+            }
+        } else {
+            // Verificar si el correo no está nulo
+            let correoQuery = `SELECT correo FROM buyer WHERE user_name = '${user_name}'`;
+            const correoResult = await db.query(correoQuery);
+            if (correoResult.length === 0 || !correoResult[0].correo) {
+                return res.status(400).json({ code: 400, message: "No se puede comprar una obra sin un correo electrónico" });
+            }
+        }
+
         // Pago por artista
         let artistPayments = {};
 
@@ -99,7 +116,7 @@ sales.post('/purchase', async (req, res, next) => {
             const { id_work, quantity, total } = purchase;
 
             // Obtener datos de la obra incluyendo el método de pago y el artista
-            query = `SELECT artist_id, payment FROM works WHERE id_work = ${id_work}`;
+            query = `SELECT artist_id, payment, correo FROM works WHERE id_work = ${id_work}`;
             let [work] = await db.query(query);
 
             if (!work) {
