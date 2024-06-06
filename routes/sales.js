@@ -156,7 +156,7 @@ sales.post("/purchase", async (req, res, next) => {
       // Agrupar por artista y sumar los totales
       if (!artistPayments[work.artist_id]) {
         artistPayments[work.artist_id] = {
-          amount: 0,
+          amount: total,
           sellerEmail: work.payment,
           personalEmail: work.correo,
           name: work.full_name,
@@ -174,7 +174,7 @@ sales.post("/purchase", async (req, res, next) => {
     // Convertir el objeto de pagos por artista en un arreglo
     const paypalPayments = Object.values(artistPayments);
 
-    console.log(paypalPayments);
+    // console.log(paypalPayments);
 
     // Llamar a la función de PayPal
     const response = await axios.post(
@@ -182,6 +182,8 @@ sales.post("/purchase", async (req, res, next) => {
       { payments: paypalPayments }
     );
     const paypalResponses = response.data;
+
+    console.log(paypalPayments);
 
     // Crear y enviar correos a los vendedores
     for (const payment of paypalPayments) {
