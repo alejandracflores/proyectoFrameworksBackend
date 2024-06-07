@@ -424,7 +424,6 @@ sales.get("/sales-forpurchass/:id", async (req, res, next) => {
         
         const responseData = {
             purchaseDetails: processedRows,
-            totalAmmount: rows[0].total_ammount
           };
           return res.status(200).json({ code: 200, message: responseData });
       } catch (error) {
