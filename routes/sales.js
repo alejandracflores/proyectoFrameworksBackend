@@ -416,6 +416,7 @@ sales.get("/sales-forpurchass/:id", async (req, res, next) => {
             title: row.title,
             artist: row.artist_id,
             description: row.description,
+            comprador: row.user_name,
             mainImageUrl: mainImageUrl,
             labels: labels
           };
