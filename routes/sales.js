@@ -343,7 +343,7 @@ sales.get("/sales-forpurchass/:id", async (req, res, next) => {
             artist: row.artist_id,
             description: row.description,
             mainImageUrl: mainImageUrl,
-            total_ammount: row.total_ammount
+            labels: row.labels
           };
         });
         
