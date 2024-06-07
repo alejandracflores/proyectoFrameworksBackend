@@ -296,7 +296,7 @@ sales.get("/history-purchases", async (req, res, next) => {
 });
 
 
-
+// Venta por purchase
 sales.get("/sales-forpurchass/:id", async (req, res, next) => {
     try {
       const token = req.headers["token"];
@@ -368,6 +368,76 @@ sales.get("/sales-forpurchass/:id", async (req, res, next) => {
   });
   
 
+  // Venta por artista
+  sales.get("/sales-forartist/", async (req, res, next) => {
+    try {
+      const token = req.headers["token"];
+      // Verificar si el token no existe
+      if (!token) {
+        return res
+          .status(401)
+          .json({ code: 401, message: "Token no proporcionado" });
+      }
+  
+      // Verificar si el token es válido
+      let decoded;
+      try {
+        decoded = jwt.verify(token, "debugkey");
+      } catch (error) {
+        return res.status(401).json({ code: 401, message: "Token inválido" });
+      }
+
+      const artist_id = decoded.user_name;
+  
+      const query = `
+              SELECT w.title, w.images, w.artist_id, w.description, w.labels, pw.id_purchase, pw.id_work, pw.quantity, pw.total
+              FROM works w
+              JOIN purchases_works pw ON pw.id_work = w.id_work
+              WHERE w.artist_id = '${artist_id}'
+          `;
+  
+      try {
+        const rows = await db.query(query);
+  
+        // URL base para las imágenes
+        const baseImageUrl = "https://bucketdealesitacomunarte.s3.amazonaws.com/";
+  
+        // Procesar las filas para incluir la URL completa de la imagen principal
+        const processedRows = rows.map((row) => {
+          const imageUrls = row.images.split(",");
+          const labels = row.labels.split(",");
+          const mainImageUrl = `${baseImageUrl}${imageUrls[0]}`;
+          return {
+            id_purchase: row.id_purchase,
+            id_work: row.id_work,
+            quantity: row.quantity,
+            total: row.total,
+            title: row.title,
+            artist: row.artist_id,
+            description: row.description,
+            mainImageUrl: mainImageUrl,
+            labels: labels
+          };
+        });
+        
+        const responseData = {
+            purchaseDetails: processedRows,
+            totalAmmount: rows[0].total_ammount
+          };
+          return res.status(200).json({ code: 200, message: responseData });
+      } catch (error) {
+        return res
+          .status(500)
+          .json({ code: 500, message: "Ocurrió un error", error: error.message });
+      }
+    } catch (error) {
+      return res.status(501).json({
+        code: 501,
+        message: "Ocurrió un error (servidor)",
+        error: error.message,
+      });
+    }
+  });
 
 
 
