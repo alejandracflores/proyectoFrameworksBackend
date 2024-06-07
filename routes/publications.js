@@ -241,20 +241,8 @@ publications.delete("/delete-publication/:id", async (req, res, next) => {
 // Mostrar publicaciones en la página principal
 publications.get("/publications-home", async (req, res, next) => {
     try {
-        // Verificar si el token no existe
-        const token = req.headers['token'];
-        if (!token) {
-            return res.status(401).json({ code: 401, message: "Token no proporcionado" });
-        }
 
-        // Verificar si el token es válido
-        try {
-            jwt.verify(token, "debugkey");
-        } catch (error) {
-            return res.status(401).json({ code: 401, message: "Token inválido" });
-        }
-
-        const query = "SELECT * FROM works ORDER BY RAND()";
+        const query = "SELECT * FROM works ORDER BY RAND() LIMIT 21";
         try {
             const rows = await db.query(query);
             
