@@ -390,10 +390,12 @@ sales.get("/sales-forpurchass/:id", async (req, res, next) => {
       const artist_id = decoded.user_name;
   
       const query = `
-              SELECT w.title, w.images, w.artist_id, w.description, w.labels, pw.id_purchase, pw.id_work, pw.quantity, pw.total, p.user_name
+              SELECT w.title, w.images, w.artist_id, w.description, w.labels, pw.id_purchase, pw.id_work, pw.quantity, pw.total, p.user_name, b.correo, u.full_name
               FROM works w
               JOIN purchases_works pw ON pw.id_work = w.id_work
               JOIN purchases p ON pw.id_purchase = p.id_purchase
+              JOIN buyer b ON b.user_name = p.user_name
+              JOIN user u ON u.user_name = b.user_name
               WHERE w.artist_id = '${artist_id}'
           `;
   
@@ -416,7 +418,9 @@ sales.get("/sales-forpurchass/:id", async (req, res, next) => {
             title: row.title,
             artist: row.artist_id,
             description: row.description,
-            comprador: row.user_name,
+            comprador_username: row.user_name,
+            comprador_fullname: row.full_name,
+            comprador_correo: row.correo,
             mainImageUrl: mainImageUrl,
             labels: labels
           };
