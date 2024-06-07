@@ -295,6 +295,81 @@ sales.get("/history-purchases", async (req, res, next) => {
   }
 });
 
+
+
+sales.get("/sales-forpurchass/:id", async (req, res, next) => {
+    try {
+      const token = req.headers["token"];
+      const id_purchase = parseInt(req.params.id);
+      // Verificar si el token no existe
+      if (!token) {
+        return res
+          .status(401)
+          .json({ code: 401, message: "Token no proporcionado" });
+      }
+  
+      // Verificar si el token es válido
+      let decoded;
+      try {
+        decoded = jwt.verify(token, "debugkey");
+      } catch (error) {
+        return res.status(401).json({ code: 401, message: "Token inválido" });
+      }
+  
+      const query = `
+              SELECT p.id_purchase, pw.id_work, pw.quantity, pw.total, p.total_ammount, w.title, w.images, w.artist_id, w.description
+              FROM purchases p
+              JOIN purchases_works pw ON p.id_purchase = pw.id_purchase
+              JOIN works w ON pw.id_work = w.id_work
+              WHERE p.id_purchase = '${id_purchase}'
+          `;
+  
+      try {
+        const rows = await db.query(query);
+  
+        // URL base para las imágenes
+        const baseImageUrl = "https://bucketdealesitacomunarte.s3.amazonaws.com/";
+  
+        // Procesar las filas para incluir la URL completa de la imagen principal
+        const processedRows = rows.map((row) => {
+          const imageUrls = row.images.split(",");
+          const mainImageUrl = `${baseImageUrl}${imageUrls[0]}`;
+          return {
+            id_purchase: row.id_purchase,
+            id_work: row.id_work,
+            quantity: row.quantity,
+            total: row.total,
+            title: row.title,
+            artist: row.artist_id,
+            description: row.description,
+            mainImageUrl: mainImageUrl,
+            total_ammount: row.total_ammount
+          };
+        });
+        
+        const responseData = {
+            purchaseDetails: processedRows,
+            totalAmmount: rows[0].total_ammount
+          };
+          return res.status(200).json({ code: 200, message: responseData });
+      } catch (error) {
+        return res
+          .status(500)
+          .json({ code: 500, message: "Ocurrió un error", error: error.message });
+      }
+    } catch (error) {
+      return res.status(501).json({
+        code: 501,
+        message: "Ocurrió un error (servidor)",
+        error: error.message,
+      });
+    }
+  });
+  
+
+
+
+
 // sales.get('/', async (req, res, next) => {
 //     const query = "SELECT * FROM sales";
 //     const rows = await db.query(query);
