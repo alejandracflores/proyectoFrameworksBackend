@@ -317,7 +317,7 @@ sales.get("/sales-forpurchass/:id", async (req, res, next) => {
       }
   
       const query = `
-              SELECT p.id_purchase, pw.id_work, pw.quantity, pw.total, p.total_ammount, w.title, w.images, w.artist_id, w.description
+              SELECT p.id_purchase, pw.id_work, pw.quantity, pw.total, p.total_ammount, w.title, w.images, w.artist_id, w.description, w.labels
               FROM purchases p
               JOIN purchases_works pw ON p.id_purchase = pw.id_purchase
               JOIN works w ON pw.id_work = w.id_work
