@@ -333,6 +333,7 @@ sales.get("/sales-forpurchass/:id", async (req, res, next) => {
         // Procesar las filas para incluir la URL completa de la imagen principal
         const processedRows = rows.map((row) => {
           const imageUrls = row.images.split(",");
+          const labels = row.labels.split(",");
           const mainImageUrl = `${baseImageUrl}${imageUrls[0]}`;
           return {
             id_purchase: row.id_purchase,
@@ -343,7 +344,7 @@ sales.get("/sales-forpurchass/:id", async (req, res, next) => {
             artist: row.artist_id,
             description: row.description,
             mainImageUrl: mainImageUrl,
-            labels: row.labels
+            labels: labels
           };
         });
         
