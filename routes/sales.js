@@ -198,8 +198,8 @@ sales.post("/purchase", async (req, res, next) => {
       const sellerEmailBody = formatEmailSeller(emailData);
 
       const sellerData = {
-        // destination: payment.personalEmail,
-        destination: "costas.rueda.juan.pablo@gmail.com",
+        destination: payment.personalEmail,
+        // destination: "costas.rueda.juan.pablo@gmail.com",
         subject: `Compra de Comunarte de $${payment.amount}`,
         html: sellerEmailBody,
       };
@@ -218,8 +218,8 @@ sales.post("/purchase", async (req, res, next) => {
     const buyerEmailBody = formatEmailBuyer(buyerEmailData)
 
     const buyerData = {
-        // destination: correo,
-        destination: "costas.rueda.juan.pablo@gmail.com",
+        destination: correo,
+        // destination: "costas.rueda.juan.pablo@gmail.com",
         subject: `Recibo de compra Comunarte`,
         html: buyerEmailBody,
       };
