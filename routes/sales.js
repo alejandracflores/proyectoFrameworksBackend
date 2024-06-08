@@ -151,7 +151,7 @@ sales.post("/purchase", async (req, res, next) => {
       // Agrupar por artista y sumar los totales
       if (!artistPayments[work.artist_id]) {
         artistPayments[work.artist_id] = {
-          amount: total,
+          amount: 0,
           sellerEmail: work.payment,
           personalEmail: work.correo,
           name: work.full_name,
