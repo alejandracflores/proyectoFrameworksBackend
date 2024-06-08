@@ -25,11 +25,11 @@ sales.post("/raise-scores", async (req, res, next) => {
     }
 
     // Obtener los datos
-    const { id_work, score, artist_id } = req.body;
+    const { id_work, score, artist_id, id_purchase } = req.body;
     const user_name = decoded.user_name;
 
     // Insertar valores en la tabla de calificaciones
-    let query = `INSERT INTO scores VALUES (${id_work}, '${user_name}', ${score})`;
+    let query = `INSERT INTO scores VALUES (${id_work}, '${user_name}', ${id_purchase}, ${score})`;
     let rows = await db.query(query);
 
     // Actualizar la calificación de la obra
@@ -92,6 +92,8 @@ sales.post("/purchase", async (req, res, next) => {
     }
 
     const { purchases, total_ammount } = req.body;
+
+    console.log(req.body);
 
     const user_name = decoded.user_name;
 
