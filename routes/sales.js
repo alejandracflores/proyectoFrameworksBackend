@@ -86,6 +86,8 @@ sales.post("/purchase", async (req, res, next) => {
 
     const { purchases, total_ammount } = req.body;
 
+    console.log(req.body);
+
     const user_name = decoded.user_name;
 
     let correoBuyer = null;
