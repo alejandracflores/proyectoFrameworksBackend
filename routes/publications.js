@@ -241,20 +241,8 @@ publications.delete("/delete-publication/:id", async (req, res, next) => {
 // Mostrar publicaciones en la página principal
 publications.get("/publications-home", async (req, res, next) => {
     try {
-        // Verificar si el token no existe
-        const token = req.headers['token'];
-        if (!token) {
-            return res.status(401).json({ code: 401, message: "Token no proporcionado" });
-        }
 
-        // Verificar si el token es válido
-        try {
-            jwt.verify(token, "debugkey");
-        } catch (error) {
-            return res.status(401).json({ code: 401, message: "Token inválido" });
-        }
-
-        const query = "SELECT * FROM works ORDER BY RAND()";
+        const query = "SELECT * FROM works ORDER BY RAND() LIMIT 21";
         try {
             const rows = await db.query(query);
             
@@ -455,21 +443,20 @@ publications.get("/search/:labels", async (req, res, next) => {
 
         try {
             const rows = await db.query(query);
-
             // URL base para las imágenes
             const baseImageUrl = "https://bucketdealesitacomunarte.s3.amazonaws.com/";
 
-            // Procesar las filas para incluir la URL completa de la imagen principal
+            // Procesar las filas para incluir la URL completa de cada imagen
             const processedRows = rows.map(row => {
+                // Dividir las imágenes y agregar la URL base
                 const imageUrls = row.images.split(",");
-                const mainImageUrl = `${baseImageUrl}${imageUrls[0]}`;
+                const imageUrlsWithBase = imageUrls.map(imageUrl => `${baseImageUrl}${imageUrl.trim()}`);
                 return {
                     ...row,
-                    mainImageUrl
+                    images: imageUrlsWithBase,
                 };
             });
-
-            return res.status(200).json({ code: 200, message: rows });
+            return res.status(200).json({ code: 200, message: processedRows });
         } catch (error) {
             return res.status(500).json({ code: 500, message: "Ocurrió un error", error: error.message });
         }

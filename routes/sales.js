@@ -5,73 +5,66 @@ const db = require("../config/database");
 const axios = require("axios");
 const { sendEmail, formatEmailSeller, formatEmailBuyer } = require("../utils/sendEmail");
 
+
 // Subir calificaciones de obras
-sales.post("/raise-scores", async (req, res, next) => {
-  try {
-    const token = req.headers["token"];
-    // Verificar si el token no existe
-    if (!token) {
-      return res
-        .status(401)
-        .json({ code: 401, message: "Token no proporcionado" });
-    }
-
-    // Verificar si el token es válido
-    let decoded;
+sales.post('/raise-scores', async (req, res, next) => {
     try {
-      decoded = jwt.verify(token, "debugkey");
+        const token = req.headers['token'];
+        // Verificar si el token no existe
+        if (!token) {
+            return res.status(401).json({code: 401, message: "Token no proporcionado"});
+        }
+
+        // Verificar si el token es válido
+        let decoded;
+        try {
+            decoded = jwt.verify(token, "debugkey");
+        } catch (error) {
+            return res.status(401).json({code: 401, message: "Token inválido"});
+        }
+
+        // Obtener los datos
+        const { id_work, score, artist_id, id_purchase } = req.body;
+        const user_name = decoded.user_name;
+
+        // Insertar valores en la tabla de calificaciones
+        let query = `INSERT INTO scores VALUES (${id_work}, '${user_name}', '${id_purchase}', ${score})`;
+        let rows = await db.query(query);
+
+        // Actualizar la calificación de la obra
+        const likeQueryWorks = `SELECT COUNT(*) as likes FROM scores WHERE id_work = ${id_work} AND score = 1`;
+        const dislikeQueryWorks = `SELECT COUNT(*) as dislikes FROM scores WHERE id_work = ${id_work} AND score = 0`;
+        
+        const [likeResultWorks] = await db.query(likeQueryWorks);
+        const [dislikeResultWorks] = await db.query(dislikeQueryWorks);
+
+        const likesWorks = likeResultWorks.likes;
+        const dislikesWorks = dislikeResultWorks.dislikes;
+
+        const updateQueryWorks = `UPDATE works SET score_like = ${likesWorks}, score_dislike = ${dislikesWorks} WHERE id_work = ${id_work}`;
+        rows = await db.query(updateQueryWorks);
+
+        // Actualizar la calificación del artista
+        const likeQueryArtist = `SELECT SUM(score_like) as likes FROM works WHERE artist_id = '${artist_id}'`;
+        const dislikeQueryArtist = `SELECT SUM(score_dislike) as dislikes FROM works WHERE artist_id = '${artist_id}'`;
+
+        const [likeResultArtist] = await db.query(likeQueryArtist);
+        const [dislikeResultArtist] = await db.query(dislikeQueryArtist);
+
+        const likesArtist = likeResultArtist.likes;
+        const dislikesArtist = dislikeResultArtist.dislikes;
+
+        const updateQueryArtist = `UPDATE artist SET score_like = ${likesArtist}, score_dislike = ${dislikesArtist} WHERE user_name = '${artist_id}'`;
+        rows = await db.query(updateQueryArtist);
+
+        if (rows.affectedRows == 1) {
+            return res.status(200).json({ code: 200, message: "Calificación subida correctamente" });
+        } else {
+            return res.status(500).json({ code: 500, message: "Ocurrió un error " });
+        }
     } catch (error) {
-      return res.status(401).json({ code: 401, message: "Token inválido" });
+        return res.status(501).json({ code: 501, message: "Ocurrió un error (servidor)", error: error.message});
     }
-
-    // Obtener los datos
-    const { id_work, score, artist_id, id_purchase } = req.body;
-    const user_name = decoded.user_name;
-
-    // Insertar valores en la tabla de calificaciones
-    let query = `INSERT INTO scores VALUES (${id_work}, '${user_name}', ${id_purchase}, ${score})`;
-    let rows = await db.query(query);
-
-    // Actualizar la calificación de la obra
-    const likeQueryWorks = `SELECT COUNT(*) as likes FROM scores WHERE id_work = ${id_work} AND score = 1`;
-    const dislikeQueryWorks = `SELECT COUNT(*) as dislikes FROM scores WHERE id_work = ${id_work} AND score = 0`;
-
-    const [likeResultWorks] = await db.query(likeQueryWorks);
-    const [dislikeResultWorks] = await db.query(dislikeQueryWorks);
-
-    const likesWorks = likeResultWorks.likes;
-    const dislikesWorks = dislikeResultWorks.dislikes;
-
-    const updateQueryWorks = `UPDATE works SET score_like = ${likesWorks}, score_dislike = ${dislikesWorks} WHERE id_work = ${id_work}`;
-    rows = await db.query(updateQueryWorks);
-
-    // Actualizar la calificación del artista
-    const likeQueryArtist = `SELECT SUM(score_like) as likes FROM works WHERE artist_id = '${artist_id}'`;
-    const dislikeQueryArtist = `SELECT SUM(score_dislike) as dislikes FROM works WHERE artist_id = '${artist_id}'`;
-
-    const [likeResultArtist] = await db.query(likeQueryArtist);
-    const [dislikeResultArtist] = await db.query(dislikeQueryArtist);
-
-    const likesArtist = likeResultArtist.likes;
-    const dislikesArtist = dislikeResultArtist.dislikes;
-
-    const updateQueryArtist = `UPDATE artist SET score_like = ${likesArtist}, score_dislike = ${dislikesArtist} WHERE user_name = '${artist_id}'`;
-    rows = await db.query(updateQueryArtist);
-
-    if (rows.affectedRows == 1) {
-      return res
-        .status(200)
-        .json({ code: 200, message: "Calificación subida correctamente" });
-    } else {
-      return res.status(500).json({ code: 500, message: "Ocurrió un error " });
-    }
-  } catch (error) {
-    return res.status(501).json({
-      code: 501,
-      message: "Ocurrió un error (servidor)",
-      error: error.message,
-    });
-  }
 });
 
 // Realizar compra
@@ -303,6 +296,157 @@ sales.get("/history-purchases", async (req, res, next) => {
     });
   }
 });
+
+
+// Venta por purchase
+sales.get("/sales-forpurchass/:id", async (req, res, next) => {
+    try {
+      const token = req.headers["token"];
+      const id_purchase = parseInt(req.params.id);
+      // Verificar si el token no existe
+      if (!token) {
+        return res
+          .status(401)
+          .json({ code: 401, message: "Token no proporcionado" });
+      }
+  
+      // Verificar si el token es válido
+      let decoded;
+      try {
+        decoded = jwt.verify(token, "debugkey");
+      } catch (error) {
+        return res.status(401).json({ code: 401, message: "Token inválido" });
+      }
+  
+      const query = `
+              SELECT p.id_purchase, pw.id_work, pw.quantity, pw.total, p.total_ammount, w.title, w.images, w.artist_id, w.description, w.labels
+              FROM purchases p
+              JOIN purchases_works pw ON p.id_purchase = pw.id_purchase
+              JOIN works w ON pw.id_work = w.id_work
+              WHERE p.id_purchase = '${id_purchase}'
+          `;
+  
+      try {
+        const rows = await db.query(query);
+  
+        // URL base para las imágenes
+        const baseImageUrl = "https://bucketdealesitacomunarte.s3.amazonaws.com/";
+  
+        // Procesar las filas para incluir la URL completa de la imagen principal
+        const processedRows = rows.map((row) => {
+          const imageUrls = row.images.split(",");
+          const labels = row.labels.split(",");
+          const mainImageUrl = `${baseImageUrl}${imageUrls[0]}`;
+          return {
+            id_purchase: row.id_purchase,
+            id_work: row.id_work,
+            quantity: row.quantity,
+            total: row.total,
+            title: row.title,
+            artist: row.artist_id,
+            description: row.description,
+            mainImageUrl: mainImageUrl,
+            labels: labels
+          };
+        });
+        
+        const responseData = {
+            purchaseDetails: processedRows,
+            totalAmmount: rows[0].total_ammount
+          };
+          return res.status(200).json({ code: 200, message: responseData });
+      } catch (error) {
+        return res
+          .status(500)
+          .json({ code: 500, message: "Ocurrió un error", error: error.message });
+      }
+    } catch (error) {
+      return res.status(501).json({
+        code: 501,
+        message: "Ocurrió un error (servidor)",
+        error: error.message,
+      });
+    }
+  });
+  
+
+  // Venta por artista
+  sales.get("/sales-forartist/", async (req, res, next) => {
+    try {
+      const token = req.headers["token"];
+      // Verificar si el token no existe
+      if (!token) {
+        return res
+          .status(401)
+          .json({ code: 401, message: "Token no proporcionado" });
+      }
+  
+      // Verificar si el token es válido
+      let decoded;
+      try {
+        decoded = jwt.verify(token, "debugkey");
+      } catch (error) {
+        return res.status(401).json({ code: 401, message: "Token inválido" });
+      }
+
+      const artist_id = decoded.user_name;
+  
+      const query = `
+              SELECT w.title, w.images, w.artist_id, w.description, w.labels, pw.id_purchase, pw.id_work, pw.quantity, pw.total, p.user_name, b.correo, u.full_name
+              FROM works w
+              JOIN purchases_works pw ON pw.id_work = w.id_work
+              JOIN purchases p ON pw.id_purchase = p.id_purchase
+              JOIN buyer b ON b.user_name = p.user_name
+              JOIN user u ON u.user_name = b.user_name
+              WHERE w.artist_id = '${artist_id}'
+          `;
+  
+      try {
+        const rows = await db.query(query);
+  
+        // URL base para las imágenes
+        const baseImageUrl = "https://bucketdealesitacomunarte.s3.amazonaws.com/";
+  
+        // Procesar las filas para incluir la URL completa de la imagen principal
+        const processedRows = rows.map((row) => {
+          const imageUrls = row.images.split(",");
+          const labels = row.labels.split(",");
+          const mainImageUrl = `${baseImageUrl}${imageUrls[0]}`;
+          return {
+            id_purchase: row.id_purchase,
+            id_work: row.id_work,
+            quantity: row.quantity,
+            total: row.total,
+            title: row.title,
+            artist: row.artist_id,
+            description: row.description,
+            comprador_username: row.user_name,
+            comprador_fullname: row.full_name,
+            comprador_correo: row.correo,
+            mainImageUrl: mainImageUrl,
+            labels: labels
+          };
+        });
+        
+        const responseData = {
+            purchaseDetails: processedRows,
+          };
+          return res.status(200).json({ code: 200, message: responseData });
+      } catch (error) {
+        return res
+          .status(500)
+          .json({ code: 500, message: "Ocurrió un error", error: error.message });
+      }
+    } catch (error) {
+      return res.status(501).json({
+        code: 501,
+        message: "Ocurrió un error (servidor)",
+        error: error.message,
+      });
+    }
+  });
+
+
 
 // sales.get('/', async (req, res, next) => {
 //     const query = "SELECT * FROM sales";
